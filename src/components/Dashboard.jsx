@@ -3,7 +3,7 @@ import * as tokenManager from '../services/tokenManager';
 import * as userStore from '../services/userStore';
 import * as walletService from '../services/walletService';
 
-export default function Dashboard({ walletAddress, token: initialToken, onLogout, onReVerify }) {
+export default function Dashboard({ walletAddress, token: initialToken, onLogout, onReVerify, onReRegister }) {
     const [token, setToken] = useState(initialToken);
     const [remaining, setRemaining] = useState(tokenManager.getRemainingTime(initialToken));
     const [history, setHistory] = useState([]);
@@ -255,6 +255,11 @@ export default function Dashboard({ walletAddress, token: initialToken, onLogout
                         <button className="btn btn-primary" onClick={onReVerify}>
                             🔄 Re-Verify
                         </button>
+                        {token && onReRegister && (
+                            <button className="btn btn-secondary" onClick={onReRegister}>
+                                🔄 Re-register Face
+                            </button>
+                        )}
                         <button className="btn btn-secondary" onClick={handleRevoke}>
                             🚫 Revoke Token
                         </button>

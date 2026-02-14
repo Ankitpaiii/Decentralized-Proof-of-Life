@@ -117,6 +117,10 @@ export default function App() {
     transition(SCREENS.VERIFY);
   };
 
+  const handleReRegister = () => {
+    transition(SCREENS.REGISTER);
+  };
+
   const handleBack = () => {
     transition(SCREENS.LANDING);
   };
@@ -179,6 +183,7 @@ export default function App() {
           token={activeToken}
           onLogout={handleLogout}
           onReVerify={handleReVerify}
+          onReRegister={handleReRegister}
         />
       )}
     </div>

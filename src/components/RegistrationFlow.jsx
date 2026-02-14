@@ -130,10 +130,10 @@ export default function RegistrationFlow({ walletAddress, onWalletConnect, onCom
                             <button className="btn btn-primary" onClick={() => onComplete?.()}>
                                 Go to Verification →
                             </button>
-                            <button className="btn btn-secondary" onClick={handleReRegister}>
-                                Re-register (overwrites data)
-                            </button>
                         </div>
+                        <p className="text-muted text-xs" style={{ marginTop: '12px' }}>
+                            🔒 To re-register, verify your identity first from the Dashboard.
+                        </p>
                     </div>
                 )}
 
