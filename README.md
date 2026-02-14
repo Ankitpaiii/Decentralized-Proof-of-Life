@@ -30,11 +30,13 @@
 |---------|-------------|
 | **Decentralized Identity** | MetaMask wallet address as the primary identifier — no centralized accounts |
 | **Facial Biometrics** | 128-dimensional face encodings via face-api.js (TinyFaceDetector + FaceNet) |
-| **Liveness Detection** | 7 interactive challenges — blink, smile, head turn, nod, mouth open, eyebrow raise |
+| **Liveness Detection** | 6 interactive challenges — smile, head turn (L/R), look up/down, mouth open |
+| **Identity Hard-Fail** | Face similarity gate — verification always fails if the face doesn't match the registered identity |
 | **Anti-Spoofing** | Challenge randomization, replay protection, rate limiting, timing validation |
 | **Privacy-First** | Only mathematical face descriptors stored — raw images never leave the browser |
 | **Token-Based Access** | Time-bound Proof-of-Life (POL) tokens with 5-minute expiry windows |
-| **Multi-Factor Scoring** | Weighted confidence scoring across face detection, liveness, challenge accuracy, and identity match |
+| **Multi-Factor Scoring** | Weighted confidence scoring — identity match (35%), challenge accuracy (25%), liveness (25%), face detection (15%) |
+| **Secure Re-registration** | Face data can only be overwritten after successful identity verification |
 | **Client-Side Storage** | IndexedDB persistence — all data stays on the user's device |
 
 ---
@@ -107,12 +109,13 @@
                     │     MULTI-FACTOR SCORING         │
                     ├─────────────────────────────────┤
                     │                                   │
-                    │  Face Detection ──── 25% weight   │
-                    │  Challenge Accuracy ─ 30% weight  │
+                    │  Identity Match ──── 35% weight   │
+                    │  Challenge Accuracy ─ 25% weight  │
                     │  Liveness Score ───── 25% weight   │
-                    │  Identity Match ──── 20% weight   │
+                    │  Face Detection ──── 15% weight   │
                     │                                   │
                     ├─────────────────────────────────┤
+                    │  ⚠️ Identity < 50% → HARD FAIL    │
                     │  ≥ 95%  →  Excellent (Pass ✅)    │
                     │  ≥ 85%  →  Good (Pass ✅)         │
                     │  ≥ 75%  →  Acceptable (Pass ✅)   │
@@ -224,13 +227,13 @@ User ──► Connect MetaMask Wallet
 ```
 User ──► Connect Wallet (identity check)
      ──► Camera Initialization + Model Loading
-     ──► Random Liveness Challenge (e.g., "Blink Twice")
+     ──► Random Liveness Challenge (e.g., "Turn Head Left")
      ──► 10-Second Timer Countdown
      ──► Real-Time Face Detection + Challenge Monitoring
      ──► Anti-Replay Validation (dedup, timing, rate limit)
-     ──► Face Match Against Stored Encoding
+     ──► Face Match Against Stored Encoding (hard-fail if < 50%)
      ──► Multi-Factor Confidence Scoring
-     ──► POL Token Issuance (if score ≥ 75%)
+     ──► POL Token Issuance (if score ≥ 75% AND identity verified)
 ```
 
 ### 3. Dashboard Access
@@ -240,7 +243,7 @@ Token Valid ──► View Identity Information
            ──► Verification History & Statistics
            ──► Token Countdown Timer
            ──► Access Secure Resources
-           ──► Re-verify or Revoke Token
+           ──► Re-verify, Re-register Face, or Revoke Token
 ```
 
 ---
@@ -257,6 +260,9 @@ Token Valid ──► View Identity Information
 | **Token Theft** | 5-minute expiry, wallet-bound tokens, session-scoped storage |
 | **Timing Attacks** | Minimum/maximum verification duration validation |
 | **Data Theft** | All biometric data stored client-side only; no server transmission |
+| **Identity Spoofing** | Hard-fail gate — different face always rejected regardless of other scores |
+| **Unauthorized Re-registration** | Face data overwrite only available after successful identity verification |
+| **MetaMask Auto-Reconnect** | Permission revocation on logout prevents silent re-authorization |
 
 ### Privacy Guarantees
 
@@ -283,13 +289,12 @@ The application features a premium dark theme with:
 
 | Challenge | Detection Method | Threshold |
 |-----------|-----------------|-----------|
-| `BLINK_TWICE` | Eye Aspect Ratio (EAR) | EAR < 0.22 for 2+ frames, 2 blinks |
 | `SMILE` | Expression analysis (`happy` score) | > 0.6 for 1.5 seconds |
 | `TURN_LEFT` | Head pose yaw estimation | Yaw < -20° |
 | `TURN_RIGHT` | Head pose yaw estimation | Yaw > 20° |
-| `NOD` | Head pose pitch tracking | 2 pitch oscillations |
 | `OPEN_MOUTH` | Mouth Aspect Ratio (MAR) | MAR > 0.35 |
-| `RAISE_EYEBROWS` | Eyebrow-to-eye distance delta | > 20% baseline increase |
+| `LOOK_UP` | Head pose pitch estimation | Pitch < -10° |
+| `LOOK_DOWN` | Head pose pitch estimation | Pitch > 10° |
 
 ---
 
