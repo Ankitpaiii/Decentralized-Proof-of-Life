@@ -3,14 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 const CHALLENGE_POOL = [
     {
-        type: 'BLINK_TWICE',
-        instruction: 'Blink Twice',
-        icon: '👁️',
-        detectionMethod: 'eye_aspect_ratio',
-        requiredCount: 2,
-        difficulty: 'easy',
-    },
-    {
         type: 'SMILE',
         instruction: 'Smile',
         icon: '😊',
@@ -43,20 +35,20 @@ const CHALLENGE_POOL = [
         difficulty: 'easy',
     },
     {
-        type: 'RAISE_EYEBROWS',
-        instruction: 'Raise Eyebrows',
-        icon: '😲',
-        detectionMethod: 'eyebrow_movement',
-        threshold: 0.25,
-        difficulty: 'medium',
+        type: 'LOOK_UP',
+        instruction: 'Look Up',
+        icon: '⬆️',
+        detectionMethod: 'head_pitch',
+        angleThreshold: 15,
+        difficulty: 'easy',
     },
     {
-        type: 'NOD',
-        instruction: 'Nod Your Head',
-        icon: '🔄',
-        detectionMethod: 'vertical_head_movement',
-        requiredCount: 2,
-        difficulty: 'medium',
+        type: 'LOOK_DOWN',
+        instruction: 'Look Down',
+        icon: '⬇️',
+        detectionMethod: 'head_pitch',
+        angleThreshold: 15,
+        difficulty: 'easy',
     },
 ];
 

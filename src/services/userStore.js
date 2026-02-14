@@ -125,7 +125,7 @@ export async function addVerificationSession(session) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORES.sessions, 'readwrite');
         const store = tx.objectStore(STORES.sessions);
-        const request = store.add({
+        const request = store.put({
             ...session,
             timestamp: Date.now(),
         });

@@ -297,11 +297,43 @@ export function detectEyebrowRaise(detection) {
     };
 }
 
+export function detectLookUp(detection) {
+    if (!detection) return { detected: false, confidence: 0, pitch: 0 };
+
+    const landmarks = detection.landmarks;
+    const pose = estimateHeadPose(landmarks);
+    const PITCH_THRESHOLD = -10; // Negative pitch = looking up
+
+    const detected = pose.pitch < PITCH_THRESHOLD;
+    const confidence = Math.min(Math.abs(Math.min(pose.pitch, 0)) / Math.abs(PITCH_THRESHOLD), 1);
+
+    return {
+        detected,
+        confidence: Math.round(confidence * 100) / 100,
+        pitch: Math.round(pose.pitch * 10) / 10,
+    };
+}
+
+export function detectLookDown(detection) {
+    if (!detection) return { detected: false, confidence: 0, pitch: 0 };
+
+    const landmarks = detection.landmarks;
+    const pose = estimateHeadPose(landmarks);
+    const PITCH_THRESHOLD = 10; // Positive pitch = looking down
+
+    const detected = pose.pitch > PITCH_THRESHOLD;
+    const confidence = Math.min(Math.max(pose.pitch, 0) / PITCH_THRESHOLD, 1);
+
+    return {
+        detected,
+        confidence: Math.round(confidence * 100) / 100,
+        pitch: Math.round(pose.pitch * 10) / 10,
+    };
+}
+
 // Main dispatcher: detect challenge action
 export function detectChallengeAction(detection, challengeType, deltaTime = 0.033) {
     switch (challengeType) {
-        case 'BLINK_TWICE':
-            return detectBlink(detection);
         case 'SMILE':
             return detectSmile(detection, deltaTime);
         case 'TURN_LEFT':
@@ -310,10 +342,10 @@ export function detectChallengeAction(detection, challengeType, deltaTime = 0.03
             return detectHeadTurn(detection, 'right');
         case 'OPEN_MOUTH':
             return detectMouthOpen(detection);
-        case 'RAISE_EYEBROWS':
-            return detectEyebrowRaise(detection);
-        case 'NOD':
-            return detectNod(detection);
+        case 'LOOK_UP':
+            return detectLookUp(detection);
+        case 'LOOK_DOWN':
+            return detectLookDown(detection);
         default:
             return { detected: false, confidence: 0 };
     }
