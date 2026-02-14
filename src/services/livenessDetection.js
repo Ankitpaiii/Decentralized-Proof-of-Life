@@ -61,18 +61,28 @@ function estimateHeadPose(landmarks) {
 }
 
 // === Detection State ===
-let blinkState = { count: 0, eyeClosed: false, consecutiveClosedFrames: 0 };
+let blinkState = { count: 0, eyeClosed: false, consecutiveClosedFrames: 0, openEAR: null };
 let headPoseHistory = [];
 let nodState = { count: 0, wasDown: false };
 let smileTimer = 0;
-let eyebrowBaseline = null;
+let eyebrowState = {
+    baseline: null,
+    calibrationSamples: [],
+    calibrated: false,
+    raisedFrames: 0,
+};
 
 export function resetDetectionState() {
-    blinkState = { count: 0, eyeClosed: false, consecutiveClosedFrames: 0 };
+    blinkState = { count: 0, eyeClosed: false, consecutiveClosedFrames: 0, openEAR: null };
     headPoseHistory = [];
     nodState = { count: 0, wasDown: false };
     smileTimer = 0;
-    eyebrowBaseline = null;
+    eyebrowState = {
+        baseline: null,
+        calibrationSamples: [],
+        calibrated: false,
+        raisedFrames: 0,
+    };
 }
 
 // === Challenge Detectors ===
@@ -88,26 +98,42 @@ export function detectBlink(detection) {
     const rightEAR = calculateEAR(rightEye);
     const avgEAR = (leftEAR + rightEAR) / 2;
 
-    const EAR_THRESHOLD = 0.22;
+    // Adaptive threshold: calibrate from open-eye EAR if available
+    // Default EAR threshold raised for better detection across webcams
+    const EAR_THRESHOLD = blinkState.openEAR
+        ? blinkState.openEAR * 0.7   // 70% of open-eye EAR as closed threshold
+        : 0.25;                        // more lenient default (was 0.22)
+
+    // Track open-eye baseline EAR (smooth average when eyes are clearly open)
+    if (avgEAR > 0.28) {
+        if (blinkState.openEAR === null) {
+            blinkState.openEAR = avgEAR;
+        } else {
+            blinkState.openEAR = blinkState.openEAR * 0.9 + avgEAR * 0.1; // smooth
+        }
+    }
 
     if (avgEAR < EAR_THRESHOLD) {
         blinkState.consecutiveClosedFrames++;
-        if (blinkState.consecutiveClosedFrames >= 2 && !blinkState.eyeClosed) {
+        // Only need 1 consecutive closed frame (was 2 — too strict at high FPS)
+        if (blinkState.consecutiveClosedFrames >= 1 && !blinkState.eyeClosed) {
             blinkState.eyeClosed = true;
         }
     } else {
-        if (blinkState.eyeClosed && blinkState.consecutiveClosedFrames >= 2) {
+        if (blinkState.eyeClosed && blinkState.consecutiveClosedFrames >= 1) {
             blinkState.count++;
             blinkState.eyeClosed = false;
         }
         blinkState.consecutiveClosedFrames = 0;
     }
 
+    const REQUIRED_BLINKS = 2;
     return {
-        detected: blinkState.count >= 2,
+        detected: blinkState.count >= REQUIRED_BLINKS,
         count: blinkState.count,
-        confidence: Math.min(blinkState.count / 2, 1),
+        confidence: Math.min(blinkState.count / REQUIRED_BLINKS, 1),
         ear: Math.round(avgEAR * 1000) / 1000,
+        threshold: Math.round(EAR_THRESHOLD * 1000) / 1000,
     };
 }
 
@@ -208,6 +234,7 @@ export function detectEyebrowRaise(detection) {
     const leftEye = landmarks.getLeftEye();
     const rightEye = landmarks.getRightEye();
 
+    // Calculate average Y distance between eyebrows and eyes
     const leftBrowY = leftEyebrow.reduce((s, p) => s + p.y, 0) / leftEyebrow.length;
     const rightBrowY = rightEyebrow.reduce((s, p) => s + p.y, 0) / rightEyebrow.length;
     const leftEyeY = leftEye.reduce((s, p) => s + p.y, 0) / leftEye.length;
@@ -217,17 +244,56 @@ export function detectEyebrowRaise(detection) {
     const rightDist = rightEyeY - rightBrowY;
     const avgDist = (leftDist + rightDist) / 2;
 
-    if (eyebrowBaseline === null) {
-        eyebrowBaseline = avgDist;
-        return { detected: false, confidence: 0 };
+    // Normalize distance by inter-eye distance (makes it resolution-independent)
+    const leftEyeCenter = { x: leftEye.reduce((s, p) => s + p.x, 0) / leftEye.length };
+    const rightEyeCenter = { x: rightEye.reduce((s, p) => s + p.x, 0) / rightEye.length };
+    const interEyeDist = Math.abs(rightEyeCenter.x - leftEyeCenter.x);
+
+    // Normalized brow-eye distance (resolution-independent)
+    const normalizedDist = interEyeDist > 0 ? avgDist / interEyeDist : avgDist;
+
+    // Calibration: collect multiple samples for a stable baseline
+    const CALIBRATION_FRAMES = 8;
+    if (!eyebrowState.calibrated) {
+        eyebrowState.calibrationSamples.push(normalizedDist);
+        if (eyebrowState.calibrationSamples.length >= CALIBRATION_FRAMES) {
+            // Use median of calibration samples (more robust than mean)
+            const sorted = [...eyebrowState.calibrationSamples].sort((a, b) => a - b);
+            eyebrowState.baseline = sorted[Math.floor(sorted.length / 2)];
+            eyebrowState.calibrated = true;
+        }
+        return { detected: false, confidence: 0, calibrating: true };
     }
 
-    const raise = avgDist - eyebrowBaseline;
-    const RAISE_THRESHOLD = eyebrowBaseline * 0.2;
+    // Raise = current distance minus baseline (positive means eyebrows went up)
+    const raise = normalizedDist - eyebrowState.baseline;
+
+    // Use both relative threshold (15% of baseline) and absolute minimum
+    const relativeThreshold = eyebrowState.baseline * 0.15;
+    const absoluteMinThreshold = 0.03; // minimum normalized raise to count
+    const RAISE_THRESHOLD = Math.max(relativeThreshold, absoluteMinThreshold);
+
+    const isRaised = raise > RAISE_THRESHOLD;
+
+    // Require a few consecutive raised frames to avoid false positives
+    if (isRaised) {
+        eyebrowState.raisedFrames++;
+    } else {
+        eyebrowState.raisedFrames = Math.max(0, eyebrowState.raisedFrames - 1);
+    }
+
+    const REQUIRED_RAISED_FRAMES = 3;
+    const detected = eyebrowState.raisedFrames >= REQUIRED_RAISED_FRAMES;
 
     return {
-        detected: raise > RAISE_THRESHOLD,
-        confidence: Math.min(Math.max(raise / RAISE_THRESHOLD, 0), 1),
+        detected,
+        confidence: Math.min(
+            Math.max(raise / RAISE_THRESHOLD, 0),
+            eyebrowState.raisedFrames / REQUIRED_RAISED_FRAMES,
+            1
+        ),
+        raise: Math.round(raise * 1000) / 1000,
+        baseline: Math.round(eyebrowState.baseline * 1000) / 1000,
     };
 }
 
@@ -252,3 +318,4 @@ export function detectChallengeAction(detection, challengeType, deltaTime = 0.03
             return { detected: false, confidence: 0 };
     }
 }
+

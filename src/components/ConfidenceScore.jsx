@@ -71,10 +71,11 @@ export default function ConfidenceScore({ result, onContinue }) {
                     {result.pass ? 'Verification Passed' : 'Verification Failed'}
                 </h3>
                 <p className="text-muted text-sm">
-                    {result.level === 'excellent' && 'Excellent — Very high confidence match'}
-                    {result.level === 'good' && 'Good — Identity verified successfully'}
-                    {result.level === 'acceptable' && 'Acceptable — Passed with lower confidence'}
-                    {result.level === 'fail' && 'Insufficient confidence for verification'}
+                    {result.identityMismatch && '🚫 Face does not match registered identity'}
+                    {!result.identityMismatch && result.level === 'excellent' && 'Excellent — Very high confidence match'}
+                    {!result.identityMismatch && result.level === 'good' && 'Good — Identity verified successfully'}
+                    {!result.identityMismatch && result.level === 'acceptable' && 'Acceptable — Passed with lower confidence'}
+                    {!result.identityMismatch && result.level === 'fail' && 'Insufficient confidence for verification'}
                 </p>
             </div>
 

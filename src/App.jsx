@@ -25,6 +25,9 @@ export default function App() {
   // Check for existing wallet connection on mount
   useEffect(() => {
     const checkWallet = async () => {
+      // Skip auto-connect if user intentionally logged out or revoked
+      if (walletService.wasLoggedOut()) return;
+
       if (walletService.isMetaMaskInstalled() && window.ethereum.selectedAddress) {
         try {
           const addr = await walletService.connectWallet();
@@ -65,16 +68,7 @@ export default function App() {
     });
   }, []);
 
-  const handleRegister = async () => {
-    // If wallet is connected, check if already registered
-    if (walletAddress) {
-      const registered = await userStore.isRegistered(walletAddress);
-      if (registered) {
-        // Already registered — go straight to verification
-        transition(SCREENS.VERIFY);
-        return;
-      }
-    }
+  const handleRegister = () => {
     transition(SCREENS.REGISTER);
   };
 
@@ -111,8 +105,8 @@ export default function App() {
     transition(SCREENS.DASHBOARD);
   };
 
-  const handleLogout = async () => {
-    await walletService.disconnectWallet();
+  const handleLogout = () => {
+    walletService.disconnectWallet();
     tokenManager.clearTokens();
     setWalletAddress(null);
     setActiveToken(null);
@@ -129,6 +123,7 @@ export default function App() {
 
   const handleWalletCheckDone = async (addr) => {
     setWalletAddress(addr);
+    walletService.clearLogoutFlag();
     const registered = await userStore.isRegistered(addr);
     if (registered) {
       transition(SCREENS.VERIFY);

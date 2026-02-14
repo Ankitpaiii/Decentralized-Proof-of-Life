@@ -18,7 +18,8 @@ export default function WalletConnect({ onConnected, walletAddress }) {
         }
 
         try {
-            const addr = await walletService.connectWallet();
+            // Use connectWalletFresh to force MetaMask account picker
+            const addr = await walletService.connectWalletFresh();
             setAddress(addr);
 
             const chainId = await walletService.getNetworkId();

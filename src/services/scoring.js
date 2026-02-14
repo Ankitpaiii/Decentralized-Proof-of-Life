@@ -1,10 +1,10 @@
 // Scoring Service — multi-factor confidence score calculation
 
 const WEIGHTS = {
-    faceDetection: 0.25,
-    challengeAccuracy: 0.30,
+    faceDetection: 0.15,
+    challengeAccuracy: 0.25,
     liveness: 0.25,
-    faceMatch: 0.20,
+    faceMatch: 0.35,  // Identity match is the most critical factor
 };
 
 const THRESHOLDS = {

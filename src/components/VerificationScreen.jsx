@@ -232,8 +232,10 @@ export default function VerificationScreen({ walletAddress, onComplete, onBack, 
                     return;
                 }
 
-                // Face match
-                let matchScore = 0.85; // Default decent score
+                // Face match — compare live face against registered encoding
+                let matchScore = 0; // Default to 0 (no match) — must prove identity
+                const IDENTITY_THRESHOLD = 0.5; // Minimum similarity to accept (same person typically > 0.6)
+
                 if (registeredEncoding && lastDetectionRef.current) {
                     const currentEncoding = Array.from(lastDetectionRef.current.descriptor);
                     matchScore = compareFaces(registeredEncoding, currentEncoding);
@@ -253,6 +255,15 @@ export default function VerificationScreen({ walletAddress, onComplete, onBack, 
                     matchScore,
                 });
 
+                // HARD FAIL: If face doesn't match registered identity, always reject
+                // This prevents a different person from passing verification
+                const identityVerified = matchScore >= IDENTITY_THRESHOLD;
+                if (!identityVerified) {
+                    score.pass = false;
+                    score.level = 'fail';
+                    score.identityMismatch = true;
+                }
+
                 // Mark challenge as used
                 antiReplay.markChallengeUsed(challenge.id);
                 antiReplay.recordAttempt(walletAddress);
@@ -267,13 +278,14 @@ export default function VerificationScreen({ walletAddress, onComplete, onBack, 
                     confidenceScore: score.score,
                     matchScore,
                     livenessScore,
+                    identityVerified,
                     duration: (Date.now() - sessionStartRef.current) / 1000,
                 });
 
                 await userStore.updateUserVerification(walletAddress, score.pass);
 
-                // Issue token if passed
-                if (score.pass) {
+                // Issue token only if passed AND identity verified
+                if (score.pass && identityVerified) {
                     const tok = tokenManager.issueToken(walletAddress, score.score, sessionId, challenge.type);
                     setToken(tok);
                 }
