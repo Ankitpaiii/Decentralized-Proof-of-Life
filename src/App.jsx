@@ -65,7 +65,16 @@ export default function App() {
     });
   }, []);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+    // If wallet is connected, check if already registered
+    if (walletAddress) {
+      const registered = await userStore.isRegistered(walletAddress);
+      if (registered) {
+        // Already registered — go straight to verification
+        transition(SCREENS.VERIFY);
+        return;
+      }
+    }
     transition(SCREENS.REGISTER);
   };
 
@@ -102,8 +111,8 @@ export default function App() {
     transition(SCREENS.DASHBOARD);
   };
 
-  const handleLogout = () => {
-    walletService.disconnectWallet();
+  const handleLogout = async () => {
+    await walletService.disconnectWallet();
     tokenManager.clearTokens();
     setWalletAddress(null);
     setActiveToken(null);

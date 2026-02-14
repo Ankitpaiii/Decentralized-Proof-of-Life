@@ -62,7 +62,19 @@ export function truncateAddress(address) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function disconnectWallet() {
+export async function disconnectWallet() {
+  // Revoke MetaMask permissions so re-login requires re-authentication
+  try {
+    if (window.ethereum) {
+      await window.ethereum.request({
+        method: 'wallet_revokePermissions',
+        params: [{ eth_accounts: {} }],
+      });
+    }
+  } catch (err) {
+    // wallet_revokePermissions may not be supported in all wallets
+    console.warn('Could not revoke wallet permissions:', err.message);
+  }
   provider = null;
   signer = null;
   currentAddress = null;

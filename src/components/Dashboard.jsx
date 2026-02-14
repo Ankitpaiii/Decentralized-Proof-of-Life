@@ -41,13 +41,15 @@ export default function Dashboard({ walletAddress, token: initialToken, onLogout
         return () => clearInterval(timerRef.current);
     }, [token]);
 
-    const handleRevoke = () => {
+    const handleRevoke = async () => {
         if (token) tokenManager.revokeToken(token.tokenId);
+        await walletService.disconnectWallet();
+        tokenManager.clearTokens();
         onLogout?.();
     };
 
-    const handleLogout = () => {
-        walletService.disconnectWallet();
+    const handleLogout = async () => {
+        await walletService.disconnectWallet();
         tokenManager.clearTokens();
         onLogout?.();
     };
