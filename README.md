@@ -41,6 +41,30 @@
 
 ---
 
+## 📸 Gallery
+
+<p align="center">
+  <img src="screenshots/hero.png" alt="Landing Page" width="800" />
+  <br />
+  <em>Landing Page - Decentralized Proof-of-Life</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/registration.png" alt="Registration Process" width="45%" />
+  <img src="screenshots/face_capture.png" alt="Face Capture" width="45%" />
+  <br />
+  <em>Secure Registration & Face Encoding</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/verification.png" alt="Liveness Verification" width="45%" />
+  <img src="screenshots/dashboard.png" alt="User Dashboard" width="45%" />
+  <br />
+  <em>Real-time Liveness Challenge & Token Dashboard</em>
+</p>
+
+---
+
 ## 🏗️ Architecture
 
 ### System Overview
