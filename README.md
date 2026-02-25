@@ -44,21 +44,24 @@
 ## 📸 Gallery
 
 <p align="center">
-  <img src="screenshots/hero.png" alt="Landing Page" width="800" />
+  <img src="https://github.com/user-attachments/assets/cf4c2586-7e61-4d48-8557-c3a2846b604d" alt="Landing Page" width="800" />
   <br />
   <em>Landing Page - Decentralized Proof-of-Life</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/registration.png" alt="Registration Process" width="45%" />
-  <img src="screenshots/face_capture.png" alt="Face Capture" width="45%" />
+  <img src="https://github.com/user-attachments/assets/3d8d8658-6999-472c-8c24-e905ee4cf8e9" alt="Registration Process" width="45%" />
+
+  <img src="https://github.com/user-attachments/assets/df160ee5-b697-41f2-945d-b76b1a12e618" alt="Face Capture" width="45%" />
   <br />
   <em>Secure Registration & Face Encoding</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/verification.png" alt="Liveness Verification" width="45%" />
-  <img src="screenshots/dashboard.png" alt="User Dashboard" width="45%" />
+
+  <img src="https://github.com/user-attachments/assets/15ff31f7-c88a-4e7a-8e47-af31f97ba15e" alt="Liveness Verification" width="45%" />
+
+  <img src="https://github.com/user-attachments/assets/96fc936c-4453-4baa-b482-217d69ffe76c" alt="User Dashboard" width="45%" />
   <br />
   <em>Real-time Liveness Challenge & Token Dashboard</em>
 </p>
